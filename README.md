@@ -10,7 +10,7 @@ HERE Data, HERE Location APIs, Mapbox GL, Bootstrap, Ministry of Education APIs,
 
 To get started:
 
-- Clone this repo and CD into CitycareUI folder
+- Clone this repo and CD into folder
 - Run `npm install` inside root dir
 - Run `npm run dev` to start the development server
 
