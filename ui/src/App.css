@@ -71,7 +71,7 @@ html, body {
 
 #play {
   object-fit: cover;
-  height: 150px;
+  height: 110px;
 }
 
 #shortcuts {
@@ -96,6 +96,25 @@ html, body {
 .short:hover {
   font-weight: bold;
   transform: scale(1.1);
+}
+
+.legend {
+  height: 20px;
+  width: 100%;
+  background: linear-gradient(90deg,teal 0,teal 14.285714285714286%,#70a494 14.285714285714286%,#70a494 28.571428571428573%,#b4c8a8 28.571428571428573%,#b4c8a8 42.857142857142854%,#f6edbd 42.857142857142854%,#f6edbd 57.142857142857146%,#edbb8a 57.142857142857146%,#edbb8a 71.42857142857143%,#de8a5a 71.42857142857143%,#de8a5a 85.71428571428571%,#ca562c 85.71428571428571%,#ca562c 100%);
+}
+
+.legend-title {
+  font-size: smaller;
+  font-weight: bold;
+  vertical-align: super;
+}
+
+.fff {
+  color: #fff;
+  font-weight: bold;
+  font-size: smaller;
+  padding: 0 5px;
 }
 
 .mapboxgl-popup-content {
@@ -155,6 +174,9 @@ html, body {
   margin-top: 5px;
 }
 
+.left {
+  float: left;
+}
 
 .right {
   float: right;
@@ -237,6 +259,14 @@ font-weight: bold;
   background: #1b2429;
 }
 
+#acty {
+  margin: 0 auto;
+  position: absolute;
+  top:40vh;
+  left:40vw;
+  z-index: 9005;
+}
+
 .dot-legend {
   height: 12px;
   width: 12px;
@@ -268,6 +298,7 @@ font-weight: bold;
 
 .navbar {
   color: #fff;
+  box-shadow: 0 0 7px rgba(0, 0, 0, 0.5);
   z-index: 9001;
 }
 

@@ -1,8 +1,9 @@
 import React from 'react';
-import { Nav } from 'react-bootstrap';
+import { Nav, Spinner } from 'react-bootstrap';
 import mapboxgl from 'mapbox-gl';
+import { bbox } from '@turf/turf';
+import { calcHex, getECE, getHERE, getIso } from './utils';
 import MapboxGeocoder from '@mapbox/mapbox-gl-geocoder';
-import axios from 'axios';
 
 class Map extends React.Component {
   constructor(props) {
@@ -12,53 +13,19 @@ class Map extends React.Component {
       map: null,
       selection: [],
       popup: null,
+      activity: true
     }
   }
 
   sendToParent = (selection) => {
     this.props.callback(selection);
-  }
+  }  
 
-  // componentDidUpdate(prevProps, prevState) {
-
-  // }
-
-  getECE = async () => {
-    const ece = 'https://catalogue.data.govt.nz/api/3/action/datastore_search?resource_id=f65dfeb4-94be-4879-957c-e081d9570216&limit=5000'
-    const qry = '?sql=SELECT * from "f65dfeb4-94be-4879-957c-e081d9570216" WHERE Add1_City IN ("Auckland","Wellington","Christchurch")'
-    const feats = []
-    let gjson = await axios.get(ece)
-      .then(resp => {
-        console.log(resp)
-        let records = resp.data.result.records;
-        for (let i = 0; i < records.length; i++) {
-          let geom = [records[i].Longitude, records[i].Latitude]
-          feats.push({
-            "type": "Feature",
-            "properties": {
-              ...records[i] 
-            },
-            "geometry": {
-              "type": "Point",
-              "coordinates": geom
-            }
-          });  
-        }
-        let geojson = {
-          "type": "FeatureCollection",
-          "features": feats
-        }
-        return geojson;
-      })
-      .catch(e => {
-        console.log(e)
-      })
-    return gjson;
-  }
+  addLayers = async () => {
+    const that = this;
+    const map = this.state.map;
   
-
-  addLayers = async (map) => {
-    let ece = await this.getECE()
+    let ece = await getECE()
     console.log('geojson is',ece)
 
     map.addSource("ece-src", {
@@ -69,33 +36,121 @@ class Map extends React.Component {
       "id": "ece-lyr",
       "type": "circle",
       "source": "ece-src",
-      'minzoom': 10,
+      'minzoom': 8,
       'maxzoom': 22,
       'paint': {
-        'circle-color': '#ecf0f1',
-        'circle-radius': 4,
+        'circle-color': ['get','hex'],
+        'circle-radius': 6,
         'circle-stroke-width': 1,
         'circle-stroke-color': '#000'
       },
     });
 
+    // Change to a pointer
     map.on('mouseenter', 'ece-lyr', () => {
       map.getCanvas().style.cursor = 'pointer';
     });
+
     // Change it back to a pointer when it leaves.
     map.on('mouseleave', 'ece-lyr', () => {
       map.getCanvas().style.cursor = '';
     });
 
+    // Create a popup, but don't add it to the map yet.
+    var pop = new mapboxgl.Popup({
+      // closeButton: false,
+      // closeOnClick: false,
+      offset: 6
+    });
+
+    map.on('click', 'ece-lyr', async function (e) {
+      // Change the cursor style as a UI indicator.
+      map.getCanvas().style.cursor = 'pointer';
+
+      var description = 
+        "<strong>Early Childhood Centre</strong><br/>" +
+        "Name: " + e.features[0].properties.Org_Name + "<br/>" +
+        "Address: " + e.features[0].properties.Add1_Line1 + ",<br/>" +
+        e.features[0].properties.Add1_Suburb + ", " + 
+        e.features[0].properties.Add1_City + "<br/>" +
+        "Total Enrolled: " + e.features[0].properties.All_Children + "<br/>";
+
+      // Populate the popup and set its coordinates
+      // based on the feature found.
+      pop
+        .setLngLat(e.lngLat)
+        .setHTML(description)
+        .addTo(map);
+
+      console.log('clicked',e.lngLat,e.features[0])
+
+      console.log('getting iso')
+      that.activity(true);
+      var isojson = await getIso(e.lngLat);
+      console.log('isojson',isojson)
+      that.addIsoLayer(isojson);
+    });
+
+    this.activity(false);
   }
 
-  updateLayers = (map) => {
+  addIsoLayer = (iso) => {
+    // Add isoline layer on user selection
+    const map = this.state.map;
+    if (map.getLayer("iso-lyr")) map.removeLayer("iso-lyr");
+    if (map.getLayer("iso-lyr-fill")) map.removeLayer("iso-lyr-fill");
+    if (map.getSource("iso-src")) map.removeSource("iso-src");
 
+    map.addSource("iso-src", {
+      "type": "geojson",
+      "data": iso
+    });
+    map.addLayer({
+      "id": "iso-lyr",
+      "type": "line",
+      "source": "iso-src",
+      'minzoom': 2,
+      'maxzoom': 22,
+      "paint": {
+          "line-color": "#000",
+          "line-width": 2
+      }
+    });
+    map.addLayer({
+        "id": "iso-lyr-fill",
+        "type": "fill",
+        "source": "iso-src",
+        'minzoom': 11,
+        'maxzoom': 22,
+        "paint": {
+            "fill-outline-color": "#000",
+            "fill-color": "#000",
+            "fill-opacity": 0.1,
+        }
+    });
+
+
+    // Change to a pointer
+    map.on('mouseenter', 'iso-lyr', () => {
+      map.getCanvas().style.cursor = 'pointer';
+    });
+
+    // Change it back to a pointer when it leaves.
+    map.on('mouseleave', 'iso-lyr', () => {
+      map.getCanvas().style.cursor = '';
+    });
+
+    this.activity(false);
+
+    var lyrcoords = bbox(iso)
+    map.fitBounds(lyrcoords, {
+      padding: 150
+    });
   }
 
-  addLyrListControls = (map) => {
+  addLyrListControls = () => {
+    const map = this.state.map;
     // Handle layers within layer toggle control
-    var that = this;
     var toggleableLayerIds = [
       // Map cadastral layers
       { id: 'ece-lyr', label: 'Early Childhood', legend: '<span class="dot-legend" style="background-color: #ecf0f1"></span>' },
@@ -136,17 +191,27 @@ class Map extends React.Component {
 
   }
 
+  showExample = () => {
+    // fly to point
+    // simulate click 
+    // gnerate isoline
+    // query demographics
+    const ll = new mapboxgl.LngLat(174.6830667437393, -36.88391158772749)
+    const map = this.state.map;
+    console.log('firing',ll)
+    map.fire('click', { lngLat: ll })
+  }
+
   componentDidMount() {
     mapboxgl.accessToken = 'pk.eyJ1Ijoib3JiaWNhIiwiYSI6ImNqcmxhazIwZzA2ajA0YW11cHc3OGM3M3AifQ.wTbR1Nh5HxJi8xLu0HLREQ';
-    const HERE = '8A2g5AjfRMpTn59J9SB0m_AWBgO6B0lzzGtNsArwCt4'
     // Set initial view state to Auckland
     const vw = {
       longitude: 174.763641,
       latitude: -36.860944,
       zoom: 10,
-      style: 'mapbox://styles/mapbox/dark-v9'
-      //'mapbox://styles/mapbox/satellite-streets-v11'
-      //mapbox.mapbox-streets-v8
+      style: 
+      'mapbox://styles/mapbox/light-v9'
+      // 'mapbox://styles/mapbox/dark-v9'
     }
 
     // Init Mapbox.gl map canvas
@@ -160,59 +225,13 @@ class Map extends React.Component {
       map: map
     });
 
-    // map.on('load', () => this.updateLyrSources(map));
-    // map.on('styledata', () => this.updateLyrSources(map));
-
     map.on('load', () => {
       // Initialise layers with bbox
-      this.addLayers(map);
-      this.addLyrListControls(map);
+      this.addLayers();
+      this.addLyrListControls();
+      // getHERE();
+      // this.showExample();
     })
-
-    map.on('moveend', () => {
-      // Update layers with bbox after moveend
-      this.updateLayers(map);
-    })
-
-    // When a click event occurs on a feature in the ai points layer, display the ai data.
-    // map.on('click', 'ai-point', (e) => {
-    //   // Pass data back to parent for displaying in panel - pass obj key/value to array
-    //   //var selection = Object.entries(e.features[0].properties)
-    //   var selection = []
-    //   selection.push(e.features[0].properties)
-    //   selection.push(e.features[0].geometry.coordinates.slice())
-    //   this.setState({
-    //     selection: selection
-    //   }, () => {
-    //     this.sendToParent(selection)
-
-    //     // Pass index values to panel for arrow forward/back
-    //     var currentIndex = this.getCurrentSelectionIndex(selection, this.state.currentData.features)
-    //     this.sendCurrentIndexToParent(currentIndex)
-
-    //     // Display a basic popup as well
-    //     var coordinates = e.features[0].geometry.coordinates.slice();
-    //     // var popImg = `https://${e.features[0].properties.s3_bucket}.s3-ap-southeast-2.amazonaws.com/${e.features[0].properties.s3_key}`
-    //     // var description = '<img src="'+popImg+'" class="img-popup"/><br/>'+
-    //     //   '<strong>Image Captured</strong><br/>' + e.features[0].properties.uploaded_orig;
-    //     var description = '<strong>Image Captured</strong><br/>' + e.features[0].properties.uploaded_orig;
-
-    //     // Ensure that if the map is zoomed out such that multiple
-    //     // copies of the feature are visible, the popup appears
-    //     // over the copy being pointed to.
-    //     while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
-    //       coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
-    //     }
-
-    //     var popup = new mapboxgl.Popup()
-    //       .setLngLat(coordinates)
-    //       .setHTML(description)
-    //       .addTo(map);
-    //     this.setState({
-    //       popup: popup
-    //     })
-    //   })
-    // });
 
     this.addCustomControls(map);
   }
@@ -232,6 +251,10 @@ class Map extends React.Component {
     map.addControl(geocoder, 'top-left');
     map.addControl(nav, 'top-left');
     map.addControl(scale);
+  }
+
+  activity = (bool) => {
+    this.setState({activity: bool})
   }
 
   fly = (loc) => {
@@ -254,6 +277,7 @@ class Map extends React.Component {
     return (
       <div id='container'>
         <div id='map'>
+          {this.state.activity ? <Spinner variant="primary" animation="border" id="acty" /> : null }
           <div id="shortcuts">
             <Nav className="justify-content-center">
               <Nav.Item><Nav.Link href="#akl" className='short' onClick={(e) => this.fly('akl')}>Auckland</Nav.Link></Nav.Item>
