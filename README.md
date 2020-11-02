@@ -10,7 +10,7 @@ HERE Data, HERE Location APIs, Mapbox GL, Bootstrap, Ministry of Education APIs,
 
 To get started:
 
-- Clone this repo and CD into folder
+- Clone this repo and CD into /ui folder
 - Run `npm install` inside root dir
 - Run `npm run dev` to start the development server
 
@@ -18,6 +18,7 @@ To get started:
 
 To build and deploy:
 
+- CD into /ui folder
 - Run `sudo npm install serve -g`
 - Run `npm run build` inside root dir
 - Run `npm start` to start the production server
