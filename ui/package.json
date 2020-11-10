@@ -2,21 +2,26 @@
   "name": "here-hackathon",
   "version": "0.1.0",
   "private": true,
+  "homepage": "./",
   "dependencies": {
     "@mapbox/mapbox-gl-geocoder": "^4.7.0",
     "@testing-library/jest-dom": "^5.11.5",
     "@testing-library/react": "^11.1.0",
     "@testing-library/user-event": "^12.1.10",
+    "@turf/turf": "^5.1.6",
     "axios": "^0.21.0",
     "bootstrap": "^4.5.3",
     "deck.gl": "^8.3.4",
     "mapbox-gl": "^1.12.0",
+    "proj4": "^2.6.2",
+    "querystring": "^0.2.0",
     "react": "^17.0.1",
     "react-bootstrap": "^1.4.0",
     "react-dom": "^17.0.1",
     "react-scripts": "4.0.0",
     "serve": "^11.3.2",
-    "web-vitals": "^0.2.4"
+    "web-vitals": "^0.2.4",
+    "wellknown": "^0.5.0"
   },
   "scripts": {
     "start": "serve -s build",

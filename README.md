@@ -1,10 +1,17 @@
 ## HERE Hackathon App
 
-Hackathon app built with React. List of libraries used:
+Hackathon app built with React. 
+GP Clinic Location / Health Analysis Tool.
 
-HERE Data, HERE Location APIs, Mapbox GL, Bootstrap, Ministry of Education APIs, Postgres, Node.js.
+List of libraries used:
+Built with HERE Data, HERE APIs, Stats NZ data, React, Bootstrap, and Carto Colours.
+
+Demo:
 
 -----
+
+Requirements:
+>What to Create: Use HERE Location Services to develop a software solution that helps people, local communities, and businesses to overcome challenges from health and social care to education and infrastructure. 
 
 ### UI - Development version 
 
@@ -19,20 +26,5 @@ To get started:
 To build and deploy:
 
 - CD into /ui folder
-- Run `sudo npm install serve -g`
 - Run `npm run build` inside root dir
 - Run `npm start` to start the production server
-
-### API - Running the server
-
-Start the API server:
-
-- Run `node server.js` inside root dir
-
-Or, start UI and API using provided startup scripts. 
-Set startup scripts as executable:
-
-- `sudo chmod +x start-ui.sh`
-- `sudo chmod +x start-api.sh`
-- `./start-ui.sh`
-- `./start-api.sh`
