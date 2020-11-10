@@ -6,7 +6,7 @@ GP Clinic Location / Health Analysis Tool.
 List of libraries used:
 Built with HERE Data, HERE APIs, Stats NZ data, React, Bootstrap, and Carto Colours.
 
-Demo:
+Demo: https://nzjs.github.io/here-hackathon-gp/
 
 -----
 
